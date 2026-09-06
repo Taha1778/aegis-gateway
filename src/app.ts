@@ -101,18 +101,16 @@ export async function buildApp(options: Options = {}) {
         : undefined;
     const status =
       error instanceof ZodError ? 400 : typeof code === "number" ? code : 500;
-    reply
-      .code(status)
-      .send({
-        error:
-          status === 400
-            ? "Invalid request. Check the documented schema."
-            : status === 413
-              ? "Request too large"
-              : status === 429
-                ? "Rate limit exceeded"
-                : "Request failed",
-      });
+    reply.code(status).send({
+      error:
+        status === 400
+          ? "Invalid request. Check the documented schema."
+          : status === 413
+            ? "Request too large"
+            : status === 429
+              ? "Rate limit exceeded"
+              : "Request failed",
+    });
   });
   app.get("/health", async () => ({ status: "ok" }));
   app.get("/api/status", async () => ({
@@ -189,11 +187,9 @@ export async function buildApp(options: Options = {}) {
         );
       } catch {
         store.record("provider", "error", [], performance.now() - start);
-        return reply
-          .code(502)
-          .send({
-            error: "Provider unavailable or returned unsupported content",
-          });
+        return reply.code(502).send({
+          error: "Provider unavailable or returned unsupported content",
+        });
       }
       if (typeof output !== "string" || output.length > 32_000)
         return reply.code(502).send({ error: "Invalid provider response" });
@@ -205,13 +201,11 @@ export async function buildApp(options: Options = {}) {
         performance.now() - start,
       );
       if (result.action === "block")
-        return reply
-          .code(422)
-          .send({
-            error: "Output blocked by policy",
-            eventId,
-            rules: result.findings.map((f) => f.rule),
-          });
+        return reply.code(422).send({
+          error: "Output blocked by policy",
+          eventId,
+          rules: result.findings.map((f) => f.rule),
+        });
       return {
         id: eventId,
         object: "chat.completion",
@@ -264,12 +258,10 @@ export async function buildApp(options: Options = {}) {
           principal(request.headers.authorization),
         )
       ) {
-        return reply
-          .code(409)
-          .send({
-            error:
-              "Approval unavailable, expired, already used, or arguments changed",
-          });
+        return reply.code(409).send({
+          error:
+            "Approval unavailable, expired, already used, or arguments changed",
+        });
       }
       store.record("tool", "approved", [], 0);
       return {
