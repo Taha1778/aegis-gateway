@@ -13,6 +13,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "format": "prettier --write src tests public scripts eval package.json tsconfig.json",
+    "format:check": "prettier --check src tests public scripts eval package.json tsconfig.json",
     "evaluate": "tsx scripts/evaluate.ts",
     "check": "npm run typecheck && npm test && npm run evaluate"
   },
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
+    "prettier": "^3.9.6",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"

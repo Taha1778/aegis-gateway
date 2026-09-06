@@ -1,51 +1,332 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Aegis Gateway — inspect AI traffic, enforce tool policies, and review decisions.">
-  <title>Aegis · AI security gateway</title>
-  <link rel="icon" href="/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.js"></script>
-</head>
-<body>
-  <aside class="sidebar">
-    <a class="brand" href="/"><img src="/mark.svg" alt="" width="34" height="34">aegis<span>GATEWAY</span></a>
-    <div class="workspace"><span class="workspace-icon">A</span><div>Security workspace<small>Local environment</small></div><span class="live-dot"></span></div>
-    <div class="nav-label">WORKSPACE</div>
-    <nav aria-label="Main navigation">
-      <button class="nav active" data-view="overview"><span>◈</span> Overview</button>
-      <button class="nav" data-view="playground"><span>⌘</span> Request lab</button>
-      <button class="nav" data-view="approvals"><span>◇</span> Approvals <b id="pending-count">0</b></button>
-      <button class="nav" data-view="policies"><span>≡</span> Policy registry</button>
-    </nav>
-    <div class="side-note"><span class="live-dot"></span> Enforcement active<p>Every decision has a reason.<br>Every tool has a boundary.</p></div>
-    <footer>AEGIS / v0.1.0<a href="https://github.com/Taha1778/aegis-gateway" target="_blank" rel="noreferrer">View source ↗</a></footer>
-  </aside>
-  <main>
-    <header><div class="breadcrumb">Workspace <span>/</span> <strong id="crumb">Overview</strong></div><div class="header-right"><span class="mode" id="mode">Connecting…</span><button class="button subtle" id="credentials-button">Connection</button></div></header>
-    <div id="notice" class="notice" role="status" hidden></div>
-    <section class="view" id="overview">
-      <div class="page-heading"><div><p class="eyebrow">OBSERVE. INSPECT. ENFORCE.</p><h1>Your AI boundary,<br><span>made visible.</span></h1><p class="subtitle">A clear view of what gets through, what gets redacted,<br class="desktop-break"> and what needs a human decision.</p></div><button class="button primary" data-goto="playground">Inspect a request <span>↗</span></button></div>
-      <div class="metrics">
-        <article class="metric"><span>Recorded events</span><strong id="metric-total">0</strong><small>Across the retained audit window</small></article>
-        <article class="metric"><span>Blocked</span><strong id="metric-block">0</strong><small><i class="dot red"></i> Policy denied the request</small></article>
-        <article class="metric"><span>Redacted</span><strong id="metric-redact">0</strong><small><i class="dot amber"></i> Sensitive patterns removed</small></article>
-        <article class="metric"><span>Pending review</span><strong id="metric-pending">0</strong><small><i class="dot blue"></i> Waiting for administrator</small></article>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Aegis Gateway — inspect AI traffic, enforce tool policies, and review decisions."
+    />
+    <title>Aegis · AI security gateway</title>
+    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/"
+        ><img src="/mark.svg" alt="" width="34" height="34" />aegis<span
+          >GATEWAY</span
+        ></a
+      >
+      <div class="workspace">
+        <span class="workspace-icon">A</span>
+        <div>Security workspace<small>Local environment</small></div>
+        <span class="live-dot"></span>
       </div>
-      <div class="overview-grid">
-        <article class="panel boundary"><div class="panel-heading"><h2>The enforcement path</h2><span class="micro">REQUEST LIFECYCLE</span></div><div class="pipeline"><div><span class="node">01</span><strong>Application</strong><small>Untrusted text</small></div><span class="connector">→</span><div class="gateway-node"><span class="node">◈</span><strong>Aegis</strong><small>Inspect + enforce</small></div><span class="connector">→</span><div><span class="node">03</span><strong>Provider</strong><small>Output inspected again</small></div></div><div class="boundary-footer"><span class="live-dot"></span> Tool permissions are enforced separately from text detection.</div></article>
-        <article class="panel coverage"><span class="eyebrow">DESIGNED FOR INSPECTION</span><h2>Decisions you<br>can explain.</h2><p>Versioned rules. Redacted previews.<br>No raw prompts in audit events.</p><button class="text-button" data-goto="policies">Explore the policies ↗</button></article>
+      <div class="nav-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <button class="nav active" data-view="overview">
+          <span>◈</span> Overview
+        </button>
+        <button class="nav" data-view="playground">
+          <span>⌘</span> Request lab
+        </button>
+        <button class="nav" data-view="approvals">
+          <span>◇</span> Approvals <b id="pending-count">0</b>
+        </button>
+        <button class="nav" data-view="policies">
+          <span>≡</span> Policy registry
+        </button>
+      </nav>
+      <div class="side-note">
+        <span class="live-dot"></span> Enforcement active
+        <p>Every decision has a reason.<br />Every tool has a boundary.</p>
       </div>
-      <article class="panel"><div class="panel-heading"><div><h2>Recent activity</h2><p>Real requests from this instance. No seeded traffic.</p></div><button class="button subtle" id="refresh">Refresh ↻</button></div><div class="table-scroll"><table><thead><tr><th>DECISION</th><th>STAGE</th><th>RULES</th><th>DURATION</th><th>TIME</th></tr></thead><tbody id="events"></tbody></table></div><div class="empty" id="events-empty"><span>◈</span><h3>Your audit trail starts here</h3><p>Run a scenario in the request lab to see a real policy decision.</p><button class="text-button" data-goto="playground">Open request lab →</button></div></article>
-      <p class="footnote">Pattern detection is heuristic. A clean result does not establish that content is safe. <span id="policy-version"></span></p>
-    </section>
-    <section class="view" id="playground" hidden>
-      <div class="section-heading"><p class="eyebrow">REQUEST LAB</p><h1>Test the boundary.</h1><p class="subtitle">Send real requests through the gateway and inspect the result.</p></div>
-      <div class="lab-grid"><article class="panel lab-input"><h2>Compose a request</h2><label for="operation">Operation</label><select id="operation"><option value="inspect">Inspect text</option><option value="chat">Demo / connected assistant</option><option value="tool">Authorize tool</option></select><label for="scenario">Load a scenario</label><select id="scenario"><option value="normal">Normal request</option><option value="injection">Instruction override</option><option value="secret">Sensitive data</option><option value="email">Email approval</option><option value="denied">Unlisted tool</option></select><label for="payload">Request content</label><textarea id="payload" rows="9" spellcheck="false" maxlength="32000">Summarize the refund policy in three sentences.</textarea><p class="hint">Text stays in the response, not the audit log. Connected mode sends sanitized text to your configured provider.</p><button class="button primary wide" id="run">Run request <span>→</span></button></article><article class="panel result-panel"><div class="panel-heading"><h2>Decision trace</h2><span id="result-status" class="badge neutral">READY</span></div><p id="result-description">Choose a scenario and run it to see the response.</p><pre id="result" aria-live="polite">No request yet.</pre><button id="consume" class="button subtle" hidden>Consume approved authorization</button><p class="hint">The gateway authorizes tools; it does not send email or execute commands. Approval consumption is demonstrated here.</p></article></div>
-    </section>
-    <section class="view" id="approvals" hidden><div class="section-heading"><p class="eyebrow">HUMAN CHECKPOINT</p><h1>Review before action.</h1><p class="subtitle">Approvals expire after 10 minutes and bind to the exact tool arguments.</p></div><div class="notice">Previews redact recognized sensitive patterns. Review full arguments in your trusted application before approving a real action.</div><div id="approval-list"></div></section>
-    <section class="view" id="policies" hidden><div class="section-heading"><p class="eyebrow">POLICY REGISTRY</p><h1>Explicit by design.</h1><p class="subtitle">Rules are versioned in source control. Runtime overrides are intentionally unavailable.</p></div><div class="policy-grid"><article class="panel policy-card"><span class="policy-number">01 / INPUT + OUTPUT</span><h2>Text inspection</h2><p>Instruction override, role spoofing, prompt extraction, and common exfiltration phrases are blocked when detected.</p><span class="badge block">BLOCK ON MATCH</span></article><article class="panel policy-card"><span class="policy-number">02 / DATA MINIMIZATION</span><h2>Sensitive patterns</h2><p>Recognizable API tokens, private keys, and email addresses are replaced before forwarding and in returned output.</p><span class="badge redact">REDACT ON MATCH</span></article><article class="panel policy-card"><span class="policy-number">03 / TOOL ACCESS</span><h2>Default deny</h2><p>Scoped knowledge searches are allowed. Email requests require approval. Every other tool is blocked.</p><span class="badge require_approval">EXPLICIT PERMISSION</span></article><article class="panel policy-card"><span class="policy-number">04 / ACCOUNTABILITY</span><h2>Bounded audit</h2><p>SQLite retains the latest 1,000 metadata events. Approval previews are redacted; authorization is single-use.</p><span class="badge allow">METADATA ONLY EVENTS</span></article></div><div class="panel limitations"><h2>Known boundaries</h2><p>Encoded, multilingual, and novel attacks can evade the detector. Quoted attack examples can trigger false positives. Binary files and malware scanning are not supported. An application must enforce tool decisions and prevent direct provider bypass.</p></div></section>
-  </main>
-  <dialog id="connection"><form method="dialog"><div class="panel-heading"><h2>Connection settings</h2><button class="button subtle" aria-label="Close connection settings">✕</button></div></form><p>Local demo needs no keys. Protected instances require separate application and administrator credentials.</p><label for="api-key">Application key</label><input id="api-key" type="password" autocomplete="off"><label for="admin-key">Administrator key</label><input id="admin-key" type="password" autocomplete="off"><p class="hint">Keys are kept in memory only and cleared on reload.</p><button class="button primary wide" id="connect">Connect</button></dialog>
-</body>
+      <footer>
+        AEGIS / v0.1.0<a
+          href="https://github.com/Taha1778/aegis-gateway"
+          target="_blank"
+          rel="noreferrer"
+          >View source ↗</a
+        >
+      </footer>
+    </aside>
+    <main>
+      <header>
+        <div class="breadcrumb">
+          Workspace <span>/</span> <strong id="crumb">Overview</strong>
+        </div>
+        <div class="header-right">
+          <span class="mode" id="mode">Connecting…</span
+          ><button class="button subtle" id="credentials-button">
+            Connection
+          </button>
+        </div>
+      </header>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <section class="view" id="overview">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">OBSERVE. INSPECT. ENFORCE.</p>
+            <h1>Your AI boundary,<br /><span>made visible.</span></h1>
+            <p class="subtitle">
+              A clear view of what gets through, what gets redacted,<br
+                class="desktop-break"
+              />
+              and what needs a human decision.
+            </p>
+          </div>
+          <button class="button primary" data-goto="playground">
+            Inspect a request <span>↗</span>
+          </button>
+        </div>
+        <div class="metrics">
+          <article class="metric">
+            <span>Recorded events</span><strong id="metric-total">0</strong
+            ><small>Across the retained audit window</small>
+          </article>
+          <article class="metric">
+            <span>Blocked</span><strong id="metric-block">0</strong
+            ><small><i class="dot red"></i> Policy denied the request</small>
+          </article>
+          <article class="metric">
+            <span>Redacted</span><strong id="metric-redact">0</strong
+            ><small><i class="dot amber"></i> Sensitive patterns removed</small>
+          </article>
+          <article class="metric">
+            <span>Pending review</span><strong id="metric-pending">0</strong
+            ><small><i class="dot blue"></i> Waiting for administrator</small>
+          </article>
+        </div>
+        <div class="overview-grid">
+          <article class="panel boundary">
+            <div class="panel-heading">
+              <h2>The enforcement path</h2>
+              <span class="micro">REQUEST LIFECYCLE</span>
+            </div>
+            <div class="pipeline">
+              <div>
+                <span class="node">01</span><strong>Application</strong
+                ><small>Untrusted text</small>
+              </div>
+              <span class="connector">→</span>
+              <div class="gateway-node">
+                <span class="node">◈</span><strong>Aegis</strong
+                ><small>Inspect + enforce</small>
+              </div>
+              <span class="connector">→</span>
+              <div>
+                <span class="node">03</span><strong>Provider</strong
+                ><small>Output inspected again</small>
+              </div>
+            </div>
+            <div class="boundary-footer">
+              <span class="live-dot"></span> Tool permissions are enforced
+              separately from text detection.
+            </div>
+          </article>
+          <article class="panel coverage">
+            <span class="eyebrow">DESIGNED FOR INSPECTION</span>
+            <h2>Decisions you<br />can explain.</h2>
+            <p>
+              Versioned rules. Redacted previews.<br />No raw prompts in audit
+              events.
+            </p>
+            <button class="text-button" data-goto="policies">
+              Explore the policies ↗
+            </button>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Recent activity</h2>
+              <p>Real requests from this instance. No seeded traffic.</p>
+            </div>
+            <button class="button subtle" id="refresh">Refresh ↻</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>DECISION</th>
+                  <th>STAGE</th>
+                  <th>RULES</th>
+                  <th>DURATION</th>
+                  <th>TIME</th>
+                </tr>
+              </thead>
+              <tbody id="events"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="events-empty">
+            <span>◈</span>
+            <h3>Your audit trail starts here</h3>
+            <p>
+              Run a scenario in the request lab to see a real policy decision.
+            </p>
+            <button class="text-button" data-goto="playground">
+              Open request lab →
+            </button>
+          </div>
+        </article>
+        <p class="footnote">
+          Pattern detection is heuristic. A clean result does not establish that
+          content is safe. <span id="policy-version"></span>
+        </p>
+      </section>
+      <section class="view" id="playground" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">REQUEST LAB</p>
+          <h1>Test the boundary.</h1>
+          <p class="subtitle">
+            Send real requests through the gateway and inspect the result.
+          </p>
+        </div>
+        <div class="lab-grid">
+          <article class="panel lab-input">
+            <h2>Compose a request</h2>
+            <label for="operation">Operation</label
+            ><select id="operation">
+              <option value="inspect">Inspect text</option>
+              <option value="chat">Demo / connected assistant</option>
+              <option value="tool">Authorize tool</option></select
+            ><label for="scenario">Load a scenario</label
+            ><select id="scenario">
+              <option value="normal">Normal request</option>
+              <option value="injection">Instruction override</option>
+              <option value="secret">Sensitive data</option>
+              <option value="email">Email approval</option>
+              <option value="denied">Unlisted tool</option></select
+            ><label for="payload">Request content</label
+            ><textarea
+              id="payload"
+              rows="9"
+              spellcheck="false"
+              maxlength="32000"
+            >
+Summarize the refund policy in three sentences.</textarea>
+            <p class="hint">
+              Text stays in the response, not the audit log. Connected mode
+              sends sanitized text to your configured provider.
+            </p>
+            <button class="button primary wide" id="run">
+              Run request <span>→</span>
+            </button>
+          </article>
+          <article class="panel result-panel">
+            <div class="panel-heading">
+              <h2>Decision trace</h2>
+              <span id="result-status" class="badge neutral">READY</span>
+            </div>
+            <p id="result-description">
+              Choose a scenario and run it to see the response.
+            </p>
+            <pre id="result" aria-live="polite">No request yet.</pre>
+            <button id="consume" class="button subtle" hidden>
+              Consume approved authorization
+            </button>
+            <p class="hint">
+              The gateway authorizes tools; it does not send email or execute
+              commands. Approval consumption is demonstrated here.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="view" id="approvals" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">HUMAN CHECKPOINT</p>
+          <h1>Review before action.</h1>
+          <p class="subtitle">
+            Approvals expire after 10 minutes and bind to the exact tool
+            arguments.
+          </p>
+        </div>
+        <div class="notice">
+          Previews redact recognized sensitive patterns. Review full arguments
+          in your trusted application before approving a real action.
+        </div>
+        <div id="approval-list"></div>
+      </section>
+      <section class="view" id="policies" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">POLICY REGISTRY</p>
+          <h1>Explicit by design.</h1>
+          <p class="subtitle">
+            Rules are versioned in source control. Runtime overrides are
+            intentionally unavailable.
+          </p>
+        </div>
+        <div class="policy-grid">
+          <article class="panel policy-card">
+            <span class="policy-number">01 / INPUT + OUTPUT</span>
+            <h2>Text inspection</h2>
+            <p>
+              Instruction override, role spoofing, prompt extraction, and common
+              exfiltration phrases are blocked when detected.
+            </p>
+            <span class="badge block">BLOCK ON MATCH</span>
+          </article>
+          <article class="panel policy-card">
+            <span class="policy-number">02 / DATA MINIMIZATION</span>
+            <h2>Sensitive patterns</h2>
+            <p>
+              Recognizable API tokens, private keys, and email addresses are
+              replaced before forwarding and in returned output.
+            </p>
+            <span class="badge redact">REDACT ON MATCH</span>
+          </article>
+          <article class="panel policy-card">
+            <span class="policy-number">03 / TOOL ACCESS</span>
+            <h2>Default deny</h2>
+            <p>
+              Scoped knowledge searches are allowed. Email requests require
+              approval. Every other tool is blocked.
+            </p>
+            <span class="badge require_approval">EXPLICIT PERMISSION</span>
+          </article>
+          <article class="panel policy-card">
+            <span class="policy-number">04 / ACCOUNTABILITY</span>
+            <h2>Bounded audit</h2>
+            <p>
+              SQLite retains the latest 1,000 metadata events. Approval previews
+              are redacted; authorization is single-use.
+            </p>
+            <span class="badge allow">METADATA ONLY EVENTS</span>
+          </article>
+        </div>
+        <div class="panel limitations">
+          <h2>Known boundaries</h2>
+          <p>
+            Encoded, multilingual, and novel attacks can evade the detector.
+            Quoted attack examples can trigger false positives. Binary files and
+            malware scanning are not supported. An application must enforce tool
+            decisions and prevent direct provider bypass.
+          </p>
+        </div>
+      </section>
+    </main>
+    <dialog id="connection">
+      <form method="dialog">
+        <div class="panel-heading">
+          <h2>Connection settings</h2>
+          <button class="button subtle" aria-label="Close connection settings">
+            ✕
+          </button>
+        </div>
+      </form>
+      <p>
+        Local demo needs no keys. Protected instances require separate
+        application and administrator credentials.
+      </p>
+      <label for="api-key">Application key</label
+      ><input id="api-key" type="password" autocomplete="off" /><label
+        for="admin-key"
+        >Administrator key</label
+      ><input id="admin-key" type="password" autocomplete="off" />
+      <p class="hint">Keys are kept in memory only and cleared on reload.</p>
+      <button class="button primary wide" id="connect">Connect</button>
+    </dialog>
+  </body>
 </html>
