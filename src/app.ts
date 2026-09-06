@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { LogController } from 'fastify';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
@@ -15,7 +15,7 @@ export async function buildApp(options: Options = {}) {
     (options.apiKey && (options.apiKey.length < 24 || options.adminKey!.length < 24 || options.apiKey === options.adminKey))) {
     throw new Error('Configure two distinct keys of at least 24 characters');
   }
-  const app = Fastify({ bodyLimit: 128_000, logger: options.logger ? { level: 'info', redact: ['req.headers.authorization'] } : false, disableRequestLogging: true });
+  const app = Fastify({ bodyLimit: 128_000, logger: options.logger ? { level: 'info', redact: ['req.headers.authorization'] } : false, logController: new LogController({ disableRequestLogging: true }) });
   const store = new Store(options.database ?? ':memory:');
   const provider = options.provider ?? demoProvider;
   app.addHook('onClose', async () => store.close());
