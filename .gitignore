@@ -9,3 +9,6 @@ test-results/
 playwright-report/
 reports/
 *.log
+.delegate/
+.playwright-cli/
+output/
