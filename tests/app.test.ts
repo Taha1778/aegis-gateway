@@ -3,6 +3,32 @@ import { buildApp } from "../src/app.js";
 import { Store } from "../src/store.js";
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
+it("sets browser security headers and limits bursts", async () => {
+  const app = await setup();
+  const page = await app.inject("/");
+  expect(page.headers["content-security-policy"]).toContain(
+    "script-src 'self'",
+  );
+  expect(page.headers["x-content-type-options"]).toBe("nosniff");
+  expect(page.headers["cache-control"]).toBe("no-store");
+  let status = 0;
+  for (let i = 0; i < 91; i++)
+    status = (await app.inject("/health")).statusCode;
+  expect(status).toBe(429);
+});
+it("keeps protected APIs protected under alternate path spellings", async () => {
+  const app = await setup({ apiKey: "a".repeat(24), adminKey: "b".repeat(24) });
+  for (const url of [
+    "/api/overview",
+    "/api/%6fverview",
+    "//api/overview",
+    "/assets/../api/overview",
+  ]) {
+    const result = await app.inject(url);
+    expect([401, 403, 404]).toContain(result.statusCode);
+    expect(result.body).not.toContain('"events"');
+  }
+});
 async function setup(options: Parameters<typeof buildApp>[0] = {}) {
   const app = await buildApp(options);
   apps.push(app);

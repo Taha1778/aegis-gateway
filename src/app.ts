@@ -305,6 +305,7 @@ export async function buildApp(options: Options = {}) {
     root: resolve("public"),
     index: "index.html",
     dotfiles: "deny",
+    cacheControl: false,
   });
   return app;
 }
